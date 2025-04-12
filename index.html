@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATM Simulator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="screen active">
+            <div class="atm-header">
+                <h1>Welcome to ATM Simulator</h1>
+            </div>
+            <div class="atm-body">
+                <p>Please insert your card to begin</p>
+                <button id="insert-card" class="btn">Insert Card</button>
+            </div>
+        </div>
+
+        <!-- Card Registration Screen -->
+        <div id="register-screen" class="screen">
+            <div class="atm-header">
+                <h1>Create Your ATM Card</h1>
+            </div>
+            <div class="atm-body">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" placeholder="Enter your name">
+                </div>
+                <div class="form-group">
+                    <label for="card-number">Card Number (16 digits)</label>
+                    <input type="text" id="card-number" placeholder="Enter card number" maxlength="16">
+                </div>
+                <div class="form-group">
+                    <label for="pin">PIN (4 digits)</label>
+                    <input type="password" id="pin" placeholder="Enter PIN" maxlength="4">
+                </div>
+                <div class="form-group">
+                    <label for="bank">Select Your Bank</label>
+                    <select id="bank">
+                        <option value="Chase">Chase Bank</option>
+                        <option value="BofA">Bank of America</option>
+                        <option value="Wells">Wells Fargo</option>
+                        <option value="Citi">Citibank</option>
+                        <option value="Capital">Capital One</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="initial-deposit">Initial Deposit ($)</label>
+                    <input type="number" id="initial-deposit" placeholder="Enter amount" min="0">
+                </div>
+                <button id="register-card" class="btn">Register Card</button>
+                <button id="back-to-welcome" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Login Screen -->
+        <div id="login-screen" class="screen">
+            <div class="atm-header">
+                <h1>Enter Your PIN</h1>
+            </div>
+            <div class="atm-body">
+                <div class="card-info">
+                    <p id="login-card-number"></p>
+                    <p id="login-bank-name"></p>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="login-pin" placeholder="Enter your PIN" maxlength="4">
+                </div>
+                <div class="keypad">
+                    <div class="keypad-row">
+                        <button class="keypad-btn" data-key="1">1</button>
+                        <button class="keypad-btn" data-key="2">2</button>
+                        <button class="keypad-btn" data-key="3">3</button>
+                    </div>
+                    <div class="keypad-row">
+                        <button class="keypad-btn" data-key="4">4</button>
+                        <button class="keypad-btn" data-key="5">5</button>
+                        <button class="keypad-btn" data-key="6">6</button>
+                    </div>
+                    <div class="keypad-row">
+                        <button class="keypad-btn" data-key="7">7</button>
+                        <button class="keypad-btn" data-key="8">8</button>
+                        <button class="keypad-btn" data-key="9">9</button>
+                    </div>
+                    <div class="keypad-row">
+                        <button class="keypad-btn" data-key="clear">Clear</button>
+                        <button class="keypad-btn" data-key="0">0</button>
+                        <button class="keypad-btn" data-key="enter">Enter</button>
+                    </div>
+                </div>
+                <div class="error-message" id="pin-error"></div>
+                <button id="eject-card" class="btn btn-secondary">Cancel / Eject Card</button>
+            </div>
+        </div>
+
+        <!-- Main Menu Screen -->
+        <div id="main-menu" class="screen">
+            <div class="atm-header">
+                <h1>Welcome, <span id="user-name"></span></h1>
+                <p><span id="user-bank"></span> - Card: <span id="user-card"></span></p>
+            </div>
+            <div class="atm-body">
+                <div class="balance-display">
+                    <p>Available Balance: $<span id="balance-amount">0.00</span></p>
+                </div>
+                <div class="menu-options">
+                    <button id="check-balance" class="menu-btn">Check Balance</button>
+                    <button id="deposit" class="menu-btn">Deposit</button>
+                    <button id="withdraw" class="menu-btn">Withdraw</button>
+                    <button id="transaction-history" class="menu-btn">Transaction History</button>
+                    <button id="download-statement" class="menu-btn">Download Statement</button>
+                    <button id="logout" class="menu-btn danger">Logout</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deposit Screen -->
+        <div id="deposit-screen" class="screen">
+            <div class="atm-header">
+                <h1>Deposit Money</h1>
+            </div>
+            <div class="atm-body">
+                <div class="form-group">
+                    <label for="deposit-amount">Enter Amount ($)</label>
+                    <input type="number" id="deposit-amount" placeholder="Enter amount" min="1">
+                </div>
+                <button id="confirm-deposit" class="btn">Deposit</button>
+                <button id="cancel-deposit" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Withdraw Screen -->
+        <div id="withdraw-screen" class="screen">
+            <div class="atm-header">
+                <h1>Withdraw Money</h1>
+            </div>
+            <div class="atm-body">
+                <div class="quick-options">
+                    <button class="quick-amount" data-amount="20">$20</button>
+                    <button class="quick-amount" data-amount="50">$50</button>
+                    <button class="quick-amount" data-amount="100">$100</button>
+                    <button class="quick-amount" data-amount="200">$200</button>
+                </div>
+                <div class="form-group">
+                    <label for="withdraw-amount">Or Enter Custom Amount ($)</label>
+                    <input type="number" id="withdraw-amount" placeholder="Enter amount" min="1">
+                </div>
+                <div class="error-message" id="withdraw-error"></div>
+                <button id="confirm-withdraw" class="btn">Withdraw</button>
+                <button id="cancel-withdraw" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Transaction History Screen -->
+        <div id="history-screen" class="screen">
+            <div class="atm-header">
+                <h1>Transaction History</h1>
+            </div>
+            <div class="atm-body">
+                <div class="transaction-list" id="transaction-list">
+                    <!-- Transactions will be added here dynamically -->
+                </div>
+                <button id="back-to-menu" class="btn">Back to Menu</button>
+            </div>
+        </div>
+
+        <!-- Receipt Screen -->
+        <div id="receipt-screen" class="screen">
+            <div class="atm-header">
+                <h1>Transaction Complete</h1>
+            </div>
+            <div class="atm-body">
+                <div class="receipt">
+                    <h2>Transaction Receipt</h2>
+                    <div class="receipt-details">
+                        <p>Date: <span id="receipt-date"></span></p>
+                        <p>Time: <span id="receipt-time"></span></p>
+                        <p>Card: <span id="receipt-card"></span></p>
+                        <p>Transaction Type: <span id="receipt-type"></span></p>
+                        <p>Amount: $<span id="receipt-amount"></span></p>
+                        <p>New Balance: $<span id="receipt-balance"></span></p>
+                    </div>
+                </div>
+                <button id="receipt-done" class="btn">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
