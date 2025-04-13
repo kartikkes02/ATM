@@ -140,10 +140,41 @@ input:focus, select:focus {
 
 .menu-btn.danger {
     background-color: #e74c3c;
+    
 }
 
 .menu-btn.danger:hover {
     background-color: #c0392b;
+}
+
+.exchange-result {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    width: 100%;
+}
+
+.card-blocked {
+    color: #e74c3c;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+/* For mobile improvements */
+@media (max-width: 500px) {
+    .keypad-btn {
+        padding: 20px; /* Larger touch targets for mobile */
+    }
+    
+    .quick-options {
+        grid-template-columns: 1fr; /* Stack quick amount buttons on mobile */
+    }
+    
+    input, select {
+        font-size: 18px; /* Larger font for mobile inputs */
+        padding: 15px;
+    }
 }
 
 .balance-display {
