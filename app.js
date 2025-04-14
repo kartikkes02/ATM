@@ -1,3 +1,206 @@
+// code for the exchange currency
+// Exchange rates (simplified, in real-world applications, these would be fetched from an API)
+const exchangeRates = {
+    USD: 1.00,    // Base currency
+    EUR: 0.91,    // 1 USD = 0.91 EUR
+    GBP: 0.78,    // 1 USD = 0.78 GBP
+    JPY: 149.50,  // 1 USD = 149.50 JPY
+    CAD: 1.35,    // 1 USD = 1.35 CAD
+    AUD: 1.50     // 1 USD = 1.50 AUD
+};
+
+function processTransaction(type, amount, description = '') {
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString();
+    const formattedTime = now.toLocaleTimeString();
+    
+    // Update balance
+    if (type === 'deposit') {
+        currentUser.balance += amount;
+    } else if (type === 'withdraw') {
+        currentUser.balance -= amount;
+    }
+    
+    // Record transaction
+    const transaction = {
+        type: type,
+        amount: amount,
+        date: now.toISOString(),
+        balance: currentUser.balance,
+        description: description // Add description field
+    };
+    
+    currentUser.transactions.push(transaction);
+    
+    // Update localStorage
+    const users = JSON.parse(localStorage.getItem('atmUsers'));
+    const index = users.findIndex(u => u.cardNumber === currentUser.cardNumber);
+    users[index] = currentUser;
+    localStorage.setItem('atmUsers', JSON.stringify(users));
+    
+    // Update UI
+    document.getElementById('balance-amount').textContent = currentUser.balance.toFixed(2);
+    
+    if (!description) {
+        // Only show receipt for standard transactions, not for special ones like currency exchange
+        // Show receipt
+        document.getElementById('receipt-date').textContent = formattedDate;
+        document.getElementById('receipt-time').textContent = formattedTime;
+        document.getElementById('receipt-card').textContent = formatCardNumber(currentUser.cardNumber);
+        document.getElementById('receipt-type').textContent = type.charAt(0).toUpperCase() + type.slice(1);
+        document.getElementById('receipt-amount').textContent = amount.toFixed(2);
+        document.getElementById('receipt-balance').textContent = currentUser.balance.toFixed(2);
+        
+        // Generate and download transaction receipt PDF
+        generateTransactionReceipt(type, amount, now);
+        
+        showScreen('receipt-screen');
+    }
+    
+    return transaction;
+}
+
+function showCurrencyExchangeScreen() {
+    const exchangeScreen = document.createElement('div');
+    exchangeScreen.className = 'screen active';
+    exchangeScreen.id = 'exchange-screen';
+    
+    exchangeScreen.innerHTML = `
+        <div class="atm-header">
+            <h1>Currency Exchange</h1>
+        </div>
+        <div class="atm-body">
+            <p>Your Balance: $${currentUser.balance.toFixed(2)} USD</p>
+            
+            <div class="form-group">
+                <label for="exchange-amount">Amount to Exchange (USD)</label>
+                <input type="number" id="exchange-amount" min="1" max="${currentUser.balance}" value="10">
+            </div>
+            
+            <div class="form-group">
+                <label for="target-currency">Target Currency</label>
+                <select id="target-currency">
+                    <option value="EUR">EUR - Euro</option>
+                    <option value="GBP">GBP - British Pound</option>
+                    <option value="JPY">JPY - Japanese Yen</option>
+                    <option value="CAD">CAD - Canadian Dollar</option>
+                    <option value="AUD">AUD - Australian Dollar</option>
+                </select>
+            </div>
+            
+            <div class="exchange-result" id="exchange-result">
+                <p>Exchange Rate: <span id="exchange-rate">0.91 EUR per USD</span></p>
+                <p>You will receive: <span id="exchange-receive">0.00</span></p>
+            </div>
+            
+            <button id="confirm-exchange" class="btn">Exchange Currency</button>
+            <button id="cancel-exchange" class="btn btn-secondary">Cancel</button>
+        </div>
+    `;
+    
+    // Add the screen to the container
+    document.querySelector('.container').appendChild(exchangeScreen);
+    
+    // Hide current screen
+    document.getElementById(currentScreen).classList.remove('active');
+    currentScreen = 'exchange-screen';
+    
+    // Add event listeners
+    document.getElementById('target-currency').addEventListener('change', updateExchangeCalculation);
+    document.getElementById('exchange-amount').addEventListener('input', updateExchangeCalculation);
+    
+    document.getElementById('cancel-exchange').addEventListener('click', function() {
+        document.querySelector('.container').removeChild(exchangeScreen);
+        showScreen('main-menu');
+    });
+    
+    document.getElementById('confirm-exchange').addEventListener('click', function() {
+        performCurrencyExchange();
+    });
+    
+    // Initialize calculation
+    updateExchangeCalculation();
+}
+
+function updateExchangeCalculation() {
+    const amount = parseFloat(document.getElementById('exchange-amount').value) || 0;
+    const currency = document.getElementById('target-currency').value;
+    const rate = exchangeRates[currency];
+    
+    document.getElementById('exchange-rate').textContent = `${rate.toFixed(2)} ${currency} per USD`;
+    document.getElementById('exchange-receive').textContent = `${(amount * rate).toFixed(2)} ${currency}`;
+}
+
+function performCurrencyExchange() {
+    const amount = parseFloat(document.getElementById('exchange-amount').value) || 0;
+    const currency = document.getElementById('target-currency').value;
+    const rate = exchangeRates[currency];
+    
+    // Validate amount
+    if (isNaN(amount) || amount <= 0) {
+        alert('Please enter a valid amount');
+        return;
+    }
+    
+    if (amount > currentUser.balance) {
+        alert('Insufficient funds');
+        return;
+    }
+    
+    // Process the exchange
+    const receivedAmount = amount * rate;
+    
+    // Add transaction for the currency exchange
+    processTransaction('withdraw', amount, `Currency exchange to ${currency}`);
+    
+    // Show receipt
+    const exchangeScreen = document.getElementById('exchange-screen');
+    document.querySelector('.container').removeChild(exchangeScreen);
+    
+    // Show exchange confirmation
+    const confirmation = document.createElement('div');
+    confirmation.className = 'screen active';
+    confirmation.id = 'exchange-confirmation';
+    
+    confirmation.innerHTML = `
+        <div class="atm-header">
+            <h1>Exchange Complete</h1>
+        </div>
+        <div class="atm-body">
+            <div class="receipt">
+                <h2>Currency Exchange Receipt</h2>
+                <div class="receipt-details">
+                    <p>Date: <span>${new Date().toLocaleDateString()}</span></p>
+                    <p>Time: <span>${new Date().toLocaleTimeString()}</span></p>
+                    <p>USD Amount: <span>$${amount.toFixed(2)}</span></p>
+                    <p>Exchange Rate: <span>${rate.toFixed(2)} ${currency}/USD</span></p>
+                    <p>Received Amount: <span>${receivedAmount.toFixed(2)} ${currency}</span></p>
+                    <p>New Balance: <span>$${currentUser.balance.toFixed(2)} USD</span></p>
+                </div>
+            </div>
+            <button id="exchange-done" class="btn">Done</button>
+        </div>
+    `;
+    
+    document.querySelector('.container').appendChild(confirmation);
+    currentScreen = 'exchange-confirmation';
+    
+    document.getElementById('exchange-done').addEventListener('click', function() {
+        document.querySelector('.container').removeChild(confirmation);
+        showScreen('main-menu');
+    });
+}
+
+document.getElementById('currency-exchange').addEventListener('click', function() {
+    showCurrencyExchangeScreen();
+});
+
+
+let pinAttempts = 0;
+let inactivityTimer = null;
+const MAX_PIN_ATTEMPTS = 3;
+const SESSION_TIMEOUT = 60000; // 60 seconds in milliseconds
+
 // Initialize the ATM application
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize jsPDF
@@ -13,6 +216,33 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById(currentScreen).classList.remove('active');
         document.getElementById(screenId).classList.add('active');
         currentScreen = screenId;
+        
+        // Reset session timer when screen changes
+        if (screenId !== 'welcome-screen' && currentUser) {
+            resetSession();
+        } else {
+            clearTimeout(inactivityTimer);
+        }
+    }
+
+    // function showScreen(screenId) {
+    //     document.getElementById(currentScreen).classList.remove('active');
+    //     document.getElementById(screenId).classList.add('active');
+    //     currentScreen = screenId;
+    // }
+    
+
+    // Add this function after showScreen
+    function resetSession() {
+        // Reset the session timer
+        clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(() => {
+            if (currentScreen !== 'welcome-screen' && currentUser) {
+                alert('Session timed out due to inactivity. Please login again.');
+                showScreen('welcome-screen');
+                currentUser = null;
+            }
+        }, SESSION_TIMEOUT);
     }
 
     // Event Listeners for Welcome Screen
@@ -36,7 +266,9 @@ document.getElementById('register-new-card').addEventListener('click', function(
     showScreen('register-screen');
 });
 
-// Add this new function (can go right after the showScreen function)
+
+
+
 function showCardSelection() {
     const users = JSON.parse(localStorage.getItem('atmUsers'));
     const cardSelection = document.createElement('div');
@@ -60,14 +292,22 @@ function showCardSelection() {
         card.innerHTML = `
             <p>${user.name}</p>
             <p>${formatCardNumber(user.cardNumber)} (${user.bank})</p>
+            ${user.blocked ? '<p class="card-blocked">CARD BLOCKED</p>' : ''}
         `;
-        card.addEventListener('click', function() {
-            document.getElementById('login-card-number').textContent = 'Card: ' + formatCardNumber(user.cardNumber);
-            document.getElementById('login-bank-name').textContent = 'Bank: ' + user.bank;
-            document.getElementById('login-pin').value = '';
-            welcomeScreen.removeChild(cardSelection);
-            showScreen('login-screen');
-        });
+        
+        if (!user.blocked) {
+            card.addEventListener('click', function() {
+                document.getElementById('login-card-number').textContent = 'Card: ' + formatCardNumber(user.cardNumber);
+                document.getElementById('login-bank-name').textContent = 'Bank: ' + user.bank;
+                document.getElementById('login-pin').value = '';
+                welcomeScreen.removeChild(cardSelection);
+                showScreen('login-screen');
+            });
+        } else {
+            card.style.opacity = '0.6';
+            card.style.cursor = 'not-allowed';
+        }
+        
         cardList.appendChild(card);
     });
     
@@ -77,11 +317,10 @@ function showCardSelection() {
     });
 }
 
+
 function formatCardNumber(cardNumber) {
     return cardNumber.replace(/(\d{4})/g, '$1 ').trim();
 }
-
-
 
     // Event Listeners for Register Screen
     document.getElementById('register-card').addEventListener('click', function() {
@@ -173,6 +412,8 @@ function formatCardNumber(cardNumber) {
         showScreen('welcome-screen');
     });
 
+    
+
     function attemptLogin() {
         const cardNumber = document.getElementById('login-card-number').textContent.replace('Card: ', '').replace(/\s/g, '');
         const pin = document.getElementById('login-pin').value;
@@ -189,14 +430,47 @@ function formatCardNumber(cardNumber) {
             document.getElementById('user-card').textContent = formatCardNumber(user.cardNumber);
             document.getElementById('balance-amount').textContent = user.balance.toFixed(2);
             errorElement.textContent = '';
+            pinAttempts = 0; // Reset PIN attempts on successful login
             showScreen('main-menu');
+            resetSession(); // Start session timer
         } else {
             // Login failed
-            errorElement.textContent = 'Invalid PIN. Please try again.';
+            pinAttempts++;
+            
+            if (pinAttempts >= MAX_PIN_ATTEMPTS) {
+                // Block the card
+                if (user) {
+                    user.blocked = true;
+                    const index = users.findIndex(u => u.cardNumber === cardNumber);
+                    users[index] = user;
+                    localStorage.setItem('atmUsers', JSON.stringify(users));
+                }
+                
+                errorElement.textContent = 'Your card has been blocked due to multiple incorrect attempts.';
+                setTimeout(() => {
+                    showScreen('welcome-screen');
+                    pinAttempts = 0;
+                }, 3000);
+            } else {
+                errorElement.textContent = `Invalid PIN. Please try again. Attempts remaining: ${MAX_PIN_ATTEMPTS - pinAttempts}`;
+            }
             document.getElementById('login-pin').value = '';
         }
     }
 
+
+    // Add event listeners for user activity to reset the session timer
+    const userActivityEvents = ['click', 'keypress', 'touchstart'];
+    userActivityEvents.forEach(event => {
+        document.addEventListener(event, function() {
+            if (currentUser && currentScreen !== 'welcome-screen') {
+                resetSession();
+            }
+        });
+    });
+
+
+    
     // Event Listeners for Main Menu
     document.getElementById('check-balance').addEventListener('click', function() {
         alert(`Your current balance is: $${currentUser.balance.toFixed(2)}`);
@@ -220,6 +494,11 @@ function formatCardNumber(cardNumber) {
 
     document.getElementById('download-statement').addEventListener('click', function() {
         generateFullStatement();
+    });
+
+
+    document.getElementById('currency-exchange').addEventListener('click', function() {
+        showCurrencyExchangeScreen();
     });
 
     document.getElementById('logout').addEventListener('click', function() {
